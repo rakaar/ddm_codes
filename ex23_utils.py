@@ -95,9 +95,9 @@ def rtd_density_a(t, v, a, w, K_max=10):
 
 def loglike_fn(params):
     v, a, w = params
-    with open('sample_rt_pos.pkl', 'rb') as f:
+    with open('sample_rt.pkl', 'rb') as f:
         RTs = np.array(pickle.load(f))
-    with open('sample_choice_pos.pkl', 'rb') as f:
+    with open('sample_choice.pkl', 'rb') as f:
         choices = np.array(pickle.load(f))
 
     choices_pos = np.where(choices == 1)[0]

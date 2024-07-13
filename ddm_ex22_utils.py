@@ -117,7 +117,6 @@ def bads_target_neg_loglike(params):
     prob_pos = np.array(prob_pos)
     prob_neg = np.array(prob_neg)
 
-    
 
     prob_pos[prob_pos <= 0] = 1e-10
     prob_neg[prob_neg <= 0] = 1e-10
