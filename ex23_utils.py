@@ -135,8 +135,7 @@ def log_joint(params):
     return prior_plus_loglike
 
 
-def run_vbmc(x0, lb, ub, plb, pub):
-    options = {'display': 'off'}
+def run_vbmc(x0, lb, ub, plb, pub, options={'display': 'off'}):
     vbmc = VBMC(log_joint, x0, lb, ub, plb, pub, options=options)
     vp, results = vbmc.optimize()
     return vp, results
