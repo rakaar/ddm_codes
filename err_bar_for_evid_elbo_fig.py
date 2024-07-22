@@ -73,6 +73,8 @@ for N_sim in N_trials_arr:
 
     evid_elbo_dict[N_sim]['elbo'] = elbo5
 
+    
+
 
 with open('evid_elbo_dict.pkl', 'wb') as f:
     pickle.dump(evid_elbo_dict, f)
