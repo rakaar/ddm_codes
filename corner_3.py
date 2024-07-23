@@ -67,9 +67,9 @@ for N_sim in N_trials_arr:
     nested_samp_results = sampler.results
 
     # NS Corner plots
-    title_kwargs = {'fontsize': 10}  # Increase the title font size
-    label_kwargs = {'fontsize': 10}  # Increase the label font size
-    tick_labelsize = 12
+    title_kwargs = {'fontsize': 12}  # Increase the title font size
+    label_kwargs = {'fontsize': 12}  # Increase the label font size
+    tick_labelsize = 14
 
     fig_1, axes = dyplot.cornerplot(nested_samp_results, color='blue', truths=np.array(true_arr),
                                 truth_color='black', show_titles=True,
