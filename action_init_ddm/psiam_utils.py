@@ -1,26 +1,25 @@
 import numpy as np
 from scipy import integrate
-from scipy.special import erf
 from scipy.integrate import quad
+from scipy.special import erf
 
-def calculate_histogram(x_axis, y_axis):
-    x_axis = np.sort(x_axis)
-    histcounts, _ = np.histogram(y_axis, bins=x_axis)
-    prob = histcounts/np.sum(histcounts)
-    return prob
-
-def density_A_fn(t, V_A, theta_A,t_a = 0):
+def rho_A_t_fn(t, V_A, theta_A, t_a = 0):
+    """
+    For AI,prob density of t given V_A, theta_A
+    """
     return (theta_A*1/np.sqrt(2*np.pi*(t - t_a)**3))*np.exp(-0.5 * (V_A**2) * (((t - t_a) - (theta_A/V_A))**2)/(t - t_a))
 
-def prob_A_fn(t_arr, V_A, theta_A):
-    N_t = len(t_arr)
-    prob_arr = np.zeros((N_t-1,1))
-    for i in range(0, N_t-1):
-        prob_arr[i] = integrate.quad(density_A_fn, t_arr[i], t_arr[i+1], args=(V_A, theta_A))[0]
-    return prob_arr
+def rho_A_t_arr_fn(t_arr, V_A, theta_A, t_a=0):
+    """
+    For AI, prob density of t arr
+    """
+    return np.array([rho_A_t_fn(t, V_A, theta_A, t_a) for t in t_arr])
 
 
-def density_E_minus_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
+def rho_E_minus_t_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
+    """
+    for EA, prob density of t given V_E, theta_E
+    """
     non_sum_term = (np.pi / (2 * theta_E)**2) * np.exp(-V_E * (Z_E + theta_E) - 0.5*(V_E**2) * (t - t_E))
 
     k_pts = np.arange(1, K_max + 1)
@@ -31,37 +30,55 @@ def density_E_minus_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
     
     return p_E_minus
 
+def rho_E_t_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
+    # TODO
+    """
+    for EA, prob density of t given V_E, theta_E
+    """
+    return  rho_E_minus_t_fn(t, V_E, theta_E, K_max, Z_E, t_E) + rho_E_minus_t_fn(t, -V_E, theta_E, K_max, -Z_E, t_E)
+
+def rho_E_minus_t_arr_fn(t_arr, V_E, theta_E, K_max, Z_E=0, t_E=0):
+    """
+    for EA, prob density of t arr
+    """
+    return np.array([rho_E_minus_t_fn(t, V_E, theta_E, K_max, Z_E, t_E) for t in t_arr])
+
+
+def rho_E_t_arr_fn(t_arr, V_E, theta_E, K_max, Z_E=0, t_E=0):
+    """
+    for EA, prob density of t arr
+    """
+    rho_E_minus = rho_E_minus_t_arr_fn(t_arr, V_E, theta_E, K_max, Z_E, t_E)
+    rho_E_plus = rho_E_minus_t_arr_fn(t_arr, -V_E, theta_E, K_max, -Z_E, t_E)
+    return  rho_E_minus + rho_E_plus
+
+
 def Phi(x):
-    # Define the normal cumulative distribution function Φ(x) using erf
+    """
+    Define the normal cumulative distribution function Φ(x) using erf
+    """
     return 0.5 * (1 + erf(x / np.sqrt(2)))
 
-def c_A(t, V_A, theta_A, t_A=0):
+def cum_A_t_fn(t, V_A, theta_A, t_A=0):
+    """
+    For AI, calculate cummulative distrn of a time t given V_A, theta_A
+    """
     term1 = Phi(V_A * ((t - t_A) - (theta_A/V_A)) / np.sqrt(t - t_A))
     term2 = np.exp(-2 * V_A * theta_A) * Phi(-V_A * ((t - t_A) + (theta_A / V_A)) / np.sqrt(t - t_A))
     
     return term1 + term2
 
+def cum_A_t_arr_fn(t_arr, V_A, theta_A, t_A=0):
+    """
+    For AI, calculate cummulative distrn of a time arr given V_A, theta_A
+    """
+    return np.array([cum_A_t_fn(t, V_A, theta_A, t_A) for t in t_arr])  
 
 
-def c_E(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
-    term1 = np.pi/(2 * theta_E)**2
-    term2 = np.exp(-V_E * (Z_E + theta_E))
-
-    k_terms = np.arange(1, K_max + 1)
-    inside_sum_term = 0
-    t_pre_term1 = -(V_E**2)/2
-    for k in k_terms:
-        sine_term = np.sin(k * np.pi * (Z_E + theta_E) / (2 * theta_E))
-        t_pre_term2 = -k**2 * (np.pi**2) / (2 * (2 * theta_E)**2)
-        t_pre_term = t_pre_term1 + t_pre_term2
-
-        inside_sum_term += (1/t_pre_term) * (np.exp(t_pre_term * (t - t_E)) - np.exp(0)) * k * sine_term
-
-
-    return term1 * term2 * inside_sum_term
-
-
-def c_E_minimal(t, V_E, theta_E, K_max):
+def cum_E_minus_t_non_norm_fn(t, V_E, theta_E, K_max):
+    """
+    For EA, calculate cummulative distrn of a time t for reaching lower bound given V_E, theta_E for  K_max
+    """
     term1 = (np.pi/(2 * theta_E)**2) * np.exp(-V_E * theta_E)
 
     k_terms = np.arange(1, K_max + 1)
@@ -72,40 +89,22 @@ def c_E_minimal(t, V_E, theta_E, K_max):
         sum_term += k*sine_term*(1/alpha)*(np.exp(alpha*t) - 1)
     
     return term1 * sum_term
-    
-def p_E_minus_and_plus(t, V_E, theta_E, K_max):
-    return p_E_minus(t, V_E, theta_E, K_max) + p_E_minus(t, -V_E, theta_E, K_max)
 
-
-def p_E_minus(t, V_E, theta_E, K_max):
+def cum_E_t_fn(t, V_E, theta_E, K_max):
     """
-    p_E(t | V_E, theta_E) for K_max terms, t_E = 0, Z_E = 0
+    For EA, calculate cummulative distrn of a time arr for reaching both bounds given V_E, theta_E for  K_max
     """
-    term1 = np.pi/(2 * theta_E)**2
-    term2 = np.exp(-(V_E * theta_E) - 0.5*(V_E**2)*t)
-    
-    k_range = np.arange(1, K_max + 1)
-    sine_terms = np.sin(k_range * np.pi /2)
-    k_range_sq = k_range**2
-    exp_term = np.exp(-t*(k_range_sq * np.pi**2) / (2 * (2 * theta_E)**2))
-    sum_term = np.sum(k_range * sine_terms * exp_term)
+    return cum_E_minus_t_non_norm_fn(t, V_E, theta_E, K_max) + cum_E_minus_t_non_norm_fn(t, -V_E, theta_E, K_max)
 
-    return term1 * term2 * sum_term
-
-def cdf_E_both_bounds(t, V_E, theta_E, K_max):
+def cum_E_t_arr_fn(t_arr, V_E, theta_E, K_max):
     """
-    CDF of normalized p_E_minimal from 0 to t
+    For EA, calculate cummulative distrn of a time arr given V_E, theta_E for  K_max
     """
-    norm_const = normalization_constant(V_E, theta_E, K_max)
-    normalized_pdf = lambda x: p_E_minus_and_plus(x, V_E, theta_E, K_max) / norm_const
-    cdf, _ = quad(normalized_pdf, 0, t)
-    return cdf
+    norm_const, _ = quad(rho_E_t_fn, 0, np.inf, args=(V_E, theta_E, K_max))
+    normalized_pdf = lambda x: rho_E_t_fn(x, V_E, theta_E, K_max) / norm_const
 
+    cdf_arr = np.zeros((len(t_arr),1))
+    for idx, t in enumerate(t_arr):
+        cdf_arr[idx], _ = quad(normalized_pdf, 0, t)
 
-def normalization_constant(V_E, theta_E, K_max):
-    """
-    Compute the normalization constant for p_E_minimal over [0, ∞)
-    """
-    integral, _ = quad(p_E_minus_and_plus, 0, np.inf, args=(V_E, theta_E, K_max))
-    return integral
-
+    return cdf_arr
