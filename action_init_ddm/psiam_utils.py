@@ -31,7 +31,6 @@ def rho_E_minus_t_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
     return p_E_minus
 
 def rho_E_t_fn(t, V_E, theta_E, K_max, Z_E=0, t_E=0):
-    # TODO
     """
     for EA, prob density of t given V_E, theta_E
     """
@@ -96,15 +95,15 @@ def cum_E_t_fn(t, V_E, theta_E, K_max):
     """
     return cum_E_minus_t_non_norm_fn(t, V_E, theta_E, K_max) + cum_E_minus_t_non_norm_fn(t, -V_E, theta_E, K_max)
 
-def cum_E_t_arr_fn(t_arr, V_E, theta_E, K_max):
+def cum_E_t_arr_fn(t_arr, V_E, theta_E, K_max, min_val):
     """
     For EA, calculate cummulative distrn of a time arr given V_E, theta_E for  K_max
     """
-    norm_const, _ = quad(rho_E_t_fn, 0, np.inf, args=(V_E, theta_E, K_max))
-    normalized_pdf = lambda x: rho_E_t_fn(x, V_E, theta_E, K_max) / norm_const
+    # norm_const, _ = quad(rho_E_t_fn, 0, np.inf, args=(V_E, theta_E, K_max))
+    # normalized_pdf = lambda x: rho_E_t_fn(x, V_E, theta_E, K_max) / norm_const
 
     cdf_arr = np.zeros((len(t_arr),1))
     for idx, t in enumerate(t_arr):
-        cdf_arr[idx], _ = quad(normalized_pdf, 0, t)
+        cdf_arr[idx], _ = quad(rho_E_t_fn, min_val, t, args=(V_E, theta_E, K_max))
 
     return cdf_arr
