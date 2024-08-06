@@ -139,3 +139,13 @@ def cum_E_t_arr_fn(t_arr, V_E, theta_E, K_max, t_stim):
         cdf_arr[idx], _ = quad(rho_E_t_fn, 0, t, args=(V_E, theta_E, K_max, t_stim))
 
     return cdf_arr
+
+def cum_E_t_minus_arr_fn(t_arr, V_E, theta_E, K_max, t_stim):
+    """
+    For EA, calculate cummulative distrn of a time arr given V_E, theta_E for  K_max
+    """
+    cdf_arr = np.zeros((len(t_arr)))
+    for idx, t in enumerate(t_arr):
+        cdf_arr[idx], _ = quad(rho_E_minus_t_fn, 0, t, args=(V_E, theta_E, K_max, t_stim))
+
+    return cdf_arr
