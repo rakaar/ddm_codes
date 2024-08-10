@@ -149,3 +149,87 @@ def cum_E_t_minus_arr_fn(t_arr, V_E, theta_E, K_max, t_stim):
         cdf_arr[idx], _ = quad(rho_E_minus_t_fn, 0, t, args=(V_E, theta_E, K_max, t_stim))
 
     return cdf_arr
+
+def F(x, mu, n):
+    """
+    Integration of e^mu*x sin(n*pi*x/2)
+    """
+    term1 = np.exp(mu*x)/(mu**2 + (n*np.pi/2)**2)
+    term2 = mu*np.sin(n*np.pi*x/2)  - n*(np.pi/2)*np.cos(n*np.pi*x/2)
+    return term1*term2
+
+
+def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max):
+    """
+    Integration of P_small(x,t) with x from 1,2
+    """
+    v = V_E
+    a = 2*theta_E
+    mu = v*theta_E
+    z = a * (Z + theta_E)/(2*theta_E)
+    
+    result = 0
+    
+    sqrt_t = np.sqrt(t)
+    
+    for n in range(-n_max, n_max + 1):
+        term1 = np.exp(4 * mu * n) * (
+            Phi((2 - (z + 4 * n + mu * t)) / sqrt_t) -
+            Phi((1 - (z + 4 * n + mu * t)) / sqrt_t)
+        )
+        
+        term2 = np.exp(2 * mu * (2 * (1 - n) - z)) * (
+            Phi((2 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t) -
+            Phi((1 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t)
+        )
+        
+        result += term1 - term2
+    
+    return result
+
+
+def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max):
+    """
+    Integration of P_large(x,t) with x from 1,2
+    """
+    v = V_E
+    a = 2*theta_E
+    mu = v*theta_E
+    z = a * (Z + theta_E)/(2*theta_E)
+
+    # Initialize the result
+    result = 0
+    
+    # Compute the sum up to K_max terms
+    for n in range(1, K_max + 1):
+        delta_F = F(x2, mu, n) - F(x1, mu, n)
+        term = delta_F * np.sin(n * np.pi * z / 2) * np.exp(-0.5 * (mu**2 + (n**2 * np.pi**2) / 4) * t)
+        result += term
+    
+    # Multiply by exp(-mu * z)
+    result *= np.exp(-mu * z)
+    
+    return result
+
+
+def S_E_fn(t, V_E, theta_E, Z, K_max):
+    """
+    Prob that EA survives till time 't'
+    """
+    v = V_E
+    a = 2*theta_E
+    mu = v*theta_E
+    Z = a * (Z + theta_E)/(2*theta_E)
+
+    term1 = (np.pi/4) * np.exp(-mu*Z - 0.5*(mu**2)*t)
+    k_terms = np.arange(1, K_max + 1)
+    
+    sine_term = 2*k_terms*np.sin(k_terms * np.pi * Z /2)
+    exp_term_1 = 2 * k_terms * np.exp(2*mu) * np.sin(k_terms * np.pi *(2-Z)/2)
+    
+    exp_term_num = np.exp(-(1/8)*(k_terms**2)*(np.pi**2)*t)
+    exp_term_deno = 1/((mu**2) + ((k_terms**2)*(np.pi**2))/4)
+    
+    sum_term = np.sum((sine_term + exp_term_1) * exp_term_num * exp_term_deno)
+
+    return term1 * sum_term
