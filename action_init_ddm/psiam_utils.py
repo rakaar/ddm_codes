@@ -233,3 +233,53 @@ def S_E_fn(t, V_E, theta_E, Z, K_max):
     sum_term = np.sum((sine_term + exp_term_1) * exp_term_num * exp_term_deno)
 
     return term1 * sum_term
+
+
+def P_x_large_t_fn(x, t, V_E, theta_E, Z, K_max):
+    """
+    Prob density that DV at x at time t for large times
+    """
+    v = V_E
+    a = 2*theta_E
+    mu = v*theta_E
+
+    Z = a * (Z + theta_E)/(2*theta_E)
+
+    term1 = np.exp(mu*x - mu*Z)
+    k_terms = np.arange(1, K_max+1)
+    sine_term_1 = np.sin(k_terms * np.pi * Z/2)
+    sine_term_2 = np.sin(k_terms * np.pi * x/2)
+    exp_term = np.exp(-0.5 * (mu**2 + 0.25*(k_terms**2)*np.pi**2) * t)
+    
+    sum_term = np.sum(sine_term_1 * sine_term_2 * exp_term)
+    return term1 * sum_term
+
+def P_x_small_t_fn(x, t, V_E, theta_E, Z, K_max):
+    """
+    Prob density that DV at x at time t for small times
+    """
+    v = V_E
+    a = 2*theta_E
+    mu = v*theta_E
+    
+    Z = a * (Z + theta_E)/(2*theta_E) # [-1,1] system to [0,2] system
+
+    term1 = 1/(2*np.pi*t)**0.5    
+    k_terms = np.linspace(-K_max, K_max, 2*K_max+1)
+    exp_1 = np.exp(4*mu*k_terms - (((x - Z - 4*k_terms - mu*t)**2)/(2*t)))
+    exp_2 = np.exp(2*mu*(2 - 2*k_terms - Z) - ((x + Z - 4 + 4*k_terms - mu*t)**2)/(2*t))
+    exp_diff = exp_1 - exp_2
+
+    return term1*np.sum(exp_diff)
+
+def P_x_t_fn(x, t, V_E, theta_E, Z, K_max, t_stim):
+    """
+    Prob Density that DV is at x at time t
+    """
+    if t <= t_stim:
+        return 0
+    t = t - t_stim
+    if t > 0.25:
+        return P_x_large_t_fn(x, t, V_E, theta_E, Z, K_max)
+    else:
+        return P_x_small_t_fn(x, t, V_E, theta_E, Z, K_max)
