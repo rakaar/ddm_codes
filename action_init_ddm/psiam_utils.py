@@ -119,7 +119,7 @@ def cum_A_t_fn(t, V_A, theta_A, t_A=0):
     For AI, calculate cummulative distrn of a time t given V_A, theta_A
     """
     term1 = Phi(V_A * ((t - t_A) - (theta_A/V_A)) / np.sqrt(t - t_A))
-    term2 = np.exp(-2 * V_A * theta_A) * Phi(-V_A * ((t - t_A) + (theta_A / V_A)) / np.sqrt(t - t_A))
+    term2 = np.exp(2 * V_A * theta_A) * Phi(-V_A * ((t - t_A) + (theta_A / V_A)) / np.sqrt(t - t_A))
     
     return term1 + term2
 
