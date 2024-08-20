@@ -283,3 +283,13 @@ def P_x_t_fn(x, t, V_E, theta_E, Z, K_max, t_stim):
         return P_x_large_t_fn(x, t, V_E, theta_E, Z, K_max)
     else:
         return P_x_small_t_fn(x, t, V_E, theta_E, Z, K_max)
+    
+
+
+def make_cdf(data):
+    """
+    Given data arr, return x axis, y axis for CDF
+    """
+    sorted_data = np.sort(data)
+    cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+    return sorted_data, cdf
