@@ -159,7 +159,7 @@ def F(x, mu, n):
     return term1*term2
 
 
-def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max):
+def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max, t_stim):
     """
     Integration of P_small(x,t) with x from 1,2
     """
@@ -168,6 +168,11 @@ def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max):
     mu = v*theta_E
     z = a * (Z + theta_E)/(2*theta_E)
     
+    if t <= t_stim:
+        return 0
+    else:
+        t = t - t_stim
+
     result = 0
     
     sqrt_t = np.sqrt(t)
@@ -188,7 +193,7 @@ def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max):
     return result
 
 
-def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max):
+def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max, t_stim):
     """
     Integration of P_large(x,t) with x from 1,2
     """
@@ -196,6 +201,11 @@ def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max):
     a = 2*theta_E
     mu = v*theta_E
     z = a * (Z + theta_E)/(2*theta_E)
+
+    if t <= t_stim:
+        return 0
+    else:
+        t = t - t_stim
 
     # Initialize the result
     result = 0
