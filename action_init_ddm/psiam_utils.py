@@ -80,7 +80,8 @@ def rho_E_t_arr_fn(t_arr, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
 def rho_E_minus_t_fn(t, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
     v = V_E
     a = 2*theta_E
-    w = 1/2
+    w = (Z_E + theta_E)/(2*theta_E)
+    
     if t <= t_stim:
         return 0
     else:
@@ -99,14 +100,12 @@ def rho_E_minus_t_fn(t, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
         sum_exp_term = np.exp(-(a**2 * (w + 2*k_vals)**2)/(2*t))
         sum_result = np.sum(sum_w_term*sum_exp_term)
 
-    # if sum_result < 0:
-    #     sum_result += 1e-3
     
     density =  non_sum_term * sum_result
-    if density < 0:
-        raise ValueError("Density cannot be negative")
-    else:
-        return density
+    if density <= 0:
+        density = 1e-16
+
+    return density
     
 def Phi(x):
     """
@@ -198,25 +197,22 @@ def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max, t_stim):
     Integration of P_large(x,t) with x from 1,2
     """
     v = V_E
-    a = 2*theta_E
     mu = v*theta_E
-    z = a * (Z + theta_E)/(2*theta_E)
+    z = 2 * (Z + theta_E)/(2*theta_E) # z is between 0 and 2
+    t /= (theta_E**2)
 
     if t <= t_stim:
         return 0
     else:
         t = t - t_stim
 
-    # Initialize the result
     result = 0
     
-    # Compute the sum up to K_max terms
     for n in range(1, K_max + 1):
         delta_F = F(x2, mu, n) - F(x1, mu, n)
         term = delta_F * np.sin(n * np.pi * z / 2) * np.exp(-0.5 * (mu**2 + (n**2 * np.pi**2) / 4) * t)
         result += term
     
-    # Multiply by exp(-mu * z)
     result *= np.exp(-mu * z)
     
     return result
