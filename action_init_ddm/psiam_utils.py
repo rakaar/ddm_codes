@@ -77,6 +77,41 @@ def rho_E_t_arr_fn(t_arr, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
 
 
 
+def rho_E_minus_t_NORM_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E=0):
+    """
+    in normalized time, PDF of hitting the lower bound
+    """
+    v = V_E*theta_E
+    w = (Z_E + theta_E)/(2*theta_E)
+    a = 2
+    if t < t_stim:
+        return 0
+    else:
+        t = t - t_stim
+
+    t /= theta_E**2
+
+    if t > 0.25:
+        non_sum_term = (np.pi/a**2)*np.exp(-v*a*w - (v**2 * t/2))
+        k_vals = np.linspace(1, K_max, K_max)
+        sum_sine_term = np.sin(k_vals*np.pi*w)
+        sum_exp_term = np.exp(-(k_vals**2 * np.pi**2 * t)/(2*a**2))
+        sum_result = np.sum(k_vals * sum_sine_term * sum_exp_term)
+    else:
+        non_sum_term = (1/a**2)*(a**3/np.sqrt(2*np.pi*t**3))*np.exp(-v*a*w - (v**2 * t)/2)
+        K_max = int(K_max/2)
+        k_vals = np.linspace(-K_max, K_max, 2*K_max + 1)
+        sum_w_term = w + 2*k_vals
+        sum_exp_term = np.exp(-(a**2 * (w + 2*k_vals)**2)/(2*t))
+        sum_result = np.sum(sum_w_term*sum_exp_term)
+
+    
+    density =  non_sum_term * sum_result
+    if density <= 0:
+        density = 1e-16
+
+    return density/theta_E**2
+
 def rho_E_minus_t_fn(t, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
     v = V_E
     a = 2*theta_E
@@ -163,14 +198,15 @@ def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max, t_stim):
     Integration of P_small(x,t) with x from 1,2
     """
     v = V_E
-    a = 2*theta_E
     mu = v*theta_E
-    z = a * (Z + theta_E)/(2*theta_E)
-    
+    z = 2 * (Z + theta_E)/(2*theta_E) # z is between 0 and 2
+
     if t <= t_stim:
         return 0
     else:
         t = t - t_stim
+
+    t /= (theta_E**2)
 
     result = 0
     
@@ -199,14 +235,19 @@ def P_large_t_btn_1_2(x1, x2, t, V_E, theta_E, Z, K_max, t_stim):
     v = V_E
     mu = v*theta_E
     z = 2 * (Z + theta_E)/(2*theta_E) # z is between 0 and 2
-    t /= (theta_E**2)
 
     if t <= t_stim:
         return 0
     else:
         t = t - t_stim
 
+    t /= (theta_E**2)
+
     result = 0
+    
+    # check if K_max is integer, else raise error
+    if not isinstance(K_max, int):
+        raise ValueError(f"K_max must be an integer.K_max={K_max}, type={type(K_max)}")
     
     for n in range(1, K_max + 1):
         delta_F = F(x2, mu, n) - F(x1, mu, n)
