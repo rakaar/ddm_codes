@@ -112,6 +112,36 @@ def rho_E_minus_t_NORM_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E=0):
 
     return density/theta_E**2
 
+
+def rho_E_minus_small_t_NORM_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E=0):
+    """
+    in normalized time, PDF of hitting the lower bound
+    """
+    v = V_E*theta_E
+    w = (Z_E + theta_E)/(2*theta_E)
+    a = 2
+    if t < t_stim:
+        return 0
+    else:
+        t = t - t_stim
+
+    t /= theta_E**2
+
+    
+    non_sum_term = (1/a**2)*(a**3/np.sqrt(2*np.pi*t**3))*np.exp(-v*a*w - (v**2 * t)/2)
+    K_max = int(K_max/2)
+    k_vals = np.linspace(-K_max, K_max, 2*K_max + 1)
+    sum_w_term = w + 2*k_vals
+    sum_exp_term = np.exp(-(a**2 * (w + 2*k_vals)**2)/(2*t))
+    sum_result = np.sum(sum_w_term*sum_exp_term)
+
+    
+    density =  non_sum_term * sum_result
+    if density <= 0:
+        density = 1e-16
+
+    return density/theta_E**2
+
 def rho_E_minus_t_fn(t, V_E, theta_E, K_max, t_stim, Z_E=0, t_E=0):
     v = V_E
     a = 2*theta_E
@@ -192,6 +222,39 @@ def F(x, mu, n):
     term2 = mu*np.sin(n*np.pi*x/2)  - n*(np.pi/2)*np.cos(n*np.pi*x/2)
     return term1*term2
 
+def P_small_t_btn_x1_x2(x1, x2, t, V_E, theta_E, Z, n_max, t_stim):
+    """
+    Integration of P_small(x,t) btn x1 and x2
+    """
+    v = V_E
+    mu = v*theta_E
+    z = 2 * (Z + theta_E)/(2*theta_E) # z is between 0 and 2
+
+    if t <= t_stim:
+        return 0
+    else:
+        t = t - t_stim
+
+    t /= (theta_E**2)
+
+    result = 0
+    
+    sqrt_t = np.sqrt(t)
+    
+    for n in range(-n_max, n_max + 1):
+        term1 = np.exp(4 * mu * n) * (
+            Phi((x2 - (z + 4 * n + mu * t)) / sqrt_t) -
+            Phi((x1 - (z + 4 * n + mu * t)) / sqrt_t)
+        )
+        
+        term2 = np.exp(2 * mu * (2 * (1 - n) - z)) * (
+            Phi((x2 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t) -
+            Phi((x1 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t)
+        )
+        
+        result += term1 - term2
+    
+    return result
 
 def P_small_t_btn_1_2(t, V_E, theta_E, Z, n_max, t_stim):
     """
