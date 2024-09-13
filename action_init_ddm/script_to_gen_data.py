@@ -71,7 +71,7 @@ def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_
 
 
 
-print('Starting Simulation')
+print(f'Starting Simulation with {N_sim} simulations')
 
 V_A = 1; theta_A = 2; 
 V_E = 1.2; theta_E = 2
