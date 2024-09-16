@@ -6,8 +6,8 @@ from numba import jit
 
 
 @jit
-def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor):
-    AI = 0; DV = Z_E; t = 0; dt = 1e-6; dB = dt**0.5
+def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, dt):
+    AI = 0; DV = Z_E; t = 0; dB = dt**0.5
     is_act = 0
     while True:
         if t*dt > t_stim + t_E_aff:
@@ -167,11 +167,17 @@ def correct_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_
     """
     P_A = rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
     P_EA_btn_1_2 = P_small_t_btn_x1_x2(1, 2, t-t_stim, V_E, theta_E, Z_E, K_max, t_stim, t_E_aff, t_motor)
+    t1 = t - t_motor - t_stim - t_E_aff
+    t2 = t - t_stim
+    if t1 < 0:
+        t1 = 0
+    P_E_plus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(-V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor))[0]
+
 
     P_E_plus = rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor)
     C_A = cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
 
-    P_correct = (P_A*P_EA_btn_1_2 + P_E_plus*(1-C_A))
+    P_correct = (P_A*(P_EA_btn_1_2 + P_E_plus_cum) + P_E_plus*(1-C_A))
 
     if P_correct <= 0:
         P_correct = 1e-16
@@ -185,11 +191,18 @@ def wrong_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_E_
     """
     P_A = rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
     P_EA_btn_0_1 = P_small_t_btn_x1_x2(0, 1, t-t_stim, V_E, theta_E, Z_E, K_max, t_stim, t_E_aff, t_motor)
+    t1 = t - t_motor - t_stim - t_E_aff
+    t2 = t - t_stim
+    if t1 < 0:
+        t1 = 0
+    P_E_minus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
+
 
     P_E_minus = rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
     C_A = cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
 
-    P_wrong = (P_A*P_EA_btn_0_1 + P_E_minus*(1-C_A))
+    P_wrong = (P_A*(P_EA_btn_0_1+P_E_minus_cum) + P_E_minus*(1-C_A))
+
 
     if P_wrong <= 0:
         P_wrong = 1e-16
@@ -203,11 +216,17 @@ def abort_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_E_
     """
     P_A = rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
     C_E = quad(rho_E_t_fn, 0, t-t_stim, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
+    t1 = t - t_motor - t_stim - t_E_aff
+    t2 = t - t_stim
+    if t1 < 0:
+        t1 = 0
+    P_E_cum = quad(rho_E_t_fn, t1, t2, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
+
 
     P_E = rho_E_t_fn(t-t_E_aff-t_stim-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
     C_A = cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
 
-    P_abort = P_A*(1-C_E) + P_E*(1-C_A)
+    P_abort = P_A*((1-C_E)+P_E_cum) + P_E*(1-C_A)
     if P_abort <= 0:
         P_abort = 1e-16
 

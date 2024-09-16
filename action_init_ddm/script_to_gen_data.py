@@ -18,8 +18,8 @@ else:
 
 
 @jit
-def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor):
-    AI = 0; DV = Z_E; t = 0; dt = 1e-6; dB = dt**0.5
+def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, dt):
+    AI = 0; DV = Z_E; t = 0; dB = dt**0.5
     is_act = 0
     while True:
         if t*dt > t_stim + t_E_aff:
