@@ -50,7 +50,8 @@ def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_
         elif DV < 0:
             choice = -1
         else: # if DV is 0 because stim has not yet been played, then choose right/left randomly
-            if t%2 == 1:
+            randomly_choose_up = np.random.rand() >= 0.5
+            if randomly_choose_up:
                 choice = 1
             else:
                 choice = -1       
