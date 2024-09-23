@@ -1,0 +1,218 @@
+% - context ---
+The evidence accumulated in time "dt" is adds to the existing decision variable x(t).
+x(t+dt) = x(t) + e(dt)
+
+x(t + dt) - x(t) = e(dt)
+
+The above equation can be written as diffusion equation
+
+dx/dt = \mu + \sigma \eta(t)
+
+\mu is the mean evidence accumulated in time dt
+\sigma is the standard deviation of the evidence accumulated in time dt
+
+so firstly we need to find \mu and \sigma
+
+
+% ---- context
+
+% ---- mu and sigma ---
+
+\subsubsection{find mean and variance of the evidence accumulated in time dt}
+
+\paragraph{Mean of the evidence accumulated in time dt}
+Let $q_e$ is the quantum evidence accumulated by 1 spike. The evidence is difference between left and right
+channels.
+
+$e(dt) =  q_e \cdot (\sum_{i=1}^{n} a_R_i(dt)  - \sum_{i=1}^{n} a_L_i(dt)) $
+
+where $a_R_i$ is the sum of number of spikes in right channel in time dt
+And we want to count total number of spikes by adding each Neuron's spikes in time "dt"
+
+Each neuron spikes according to poisson process with mean rate "r". Number of spikes in time "dt" is $r*dt$
+Mean Evidence accumulated by single neuron is
+
+$E(a_R_i) = q_e \cdot r \cdot dt$
+
+Assuming all neuron's spiking is independent. Mean evidence of all neurons in right channel is
+
+$E(\sum_{i=1}^{n} a_R_i) = E(q_e \cdot a_R_1) + E(q_e \cdot a_R_2) + ... + E(q_e \cdot a_R_n) 
+                         = (q_e \cdot r_R \cdot dt) + (q_e \cdot r_R \cdot dt) ..... (q_e \cdot r_R \cdot dt)
+                         = N \cdot q_e \cdot r_R \cdot dt$
+
+Similarly, Mean evidence of all neurons in left channel is
+
+$E(\sum_{i=1}^{n} a_L_i) = N \cdot q_e \cdot r_L \cdot dt$
+
+So, Mean evidence accumulated in time dt is
+
+$E(e(dt)) = q_e \cdot E(\sum_{i}^{N} a_R_i(t) - \sum_{i}^{N} a_L_i(t))
+
+Because mean of Difference Independent Random Variables is difference of their means
+          = q_e \cdot E(\sum_{i}^{N} a_R_i(t)) - E(\sum_{i}^{N} a_L_i(t))
+          = q_e \cdot N \cdot (r_R - r_L) \cdot dt
+
+
+So, mean of evidence accumulated in time dt is
+E(e(dt)) = \mu dt = q_e \cdot N \cdot (r_R - r_L) \cdot dt
+
+\paragraph{Variance of the evidence accumulated in time dt}
+
+Var(e(dt)) = Var(q_e \cdot (\sum_{i=1}^{n} a_R_i(dt)  - \sum_{i=1}^{n} a_L_i(dt)))
+           = q_e^2 Var(\sum_{i=1}^{n} a_R_i(dt)  - \sum_{i=1}^{n} a_L_i(dt))
+
+Variance of difference of 2 Independent Random variables is sum of their variances
+           = q_e^2 (Var(\sum_{i=1}^{n} a_R_i(dt)) + Var(\sum_{i=1}^{n} a_L_i(dt)))
+
+In a poisson process, variance is equal to mean
+            = q_e^2 (E(\sum_{i=1}^{n} a_R_i(dt)) + E(\sum_{i=1}^{n} a_L_i(dt)))
+            = q_e^2 (N \cdot q_e \cdot r_R \cdot dt + N \cdot q_e \cdot r_L \cdot dt)
+            = q_e^2 \cdot N \cdot q_e \cdot (r_R + r_L) \cdot dt
+
+
+So, variance of evidence accumulated in time dt is
+Var(e(dt)) = \sigma^2 dt = q_e^2 \cdot N \cdot q_e \cdot (r_R + r_L) \cdot dt
+
+We have mean and variance of evidence in terms of rates. But all we know about stimulus is Sound levels of left and right sounds.
+ We need to express rates of right and left channels in terms of sound levels
+
+
+% ---- mu and sigma ---
+subsubsection{Expressing rates in terms of sound levels}
+
+
+
+
+% --- variance ---
+
+\paragraph{Variance}
+
+Remeber variance was defined as
+Var(e(dt)) = q_e^2 \cdot N \cdot q_e \cdot (r_R + r_L) \cdot dt
+
+So, basically, same as variance except for q_E^2 instead of q_e and r_R + r_L instead of r_R - r_L
+Doing the same substitution as in mean, we get cosh instead of sinh
+
+Var(e(dt)) =   \frac{2q_e^2}{T_0}  10^{\lambda \frac{ABL}{20}} \cosh\left(\lambda \frac{ILD}{X}\right) dt
+
+% ---
+
+Since
+ <e(dt)> is the evidence accumulated in each time step, which is \mu dt
+
+ <e(dt)> = \mu dt
+
+  similarly, Variance at each step is (\sigma dB)^2 = \sigma^2 dt
+
+  
+So,  Var(e(dt)) = \sigma^2 dt
+
+  we have 
+
+  % put these 2 equations in a box to highllight
+  \mu =    \frac{2q_e}{T_0}  10^{\lambda \frac{ABL}{20}} \sinh\left(\lambda \frac{ILD}{X}\right) 
+ \sigma^2 =   \frac{2q_e^2}{T_0}  10^{\lambda \frac{ABL}{20}} \cosh\left(\lambda \frac{ILD}{X}\right)
+
+ % ----
+
+ \subsubsection{Things are small}
+
+ \lambda < 1 
+
+ Max value of ILD is 6
+
+ X = 17.3
+
+    So, \lambda \frac{ILD}{X} << 1
+
+
+And when \phi is small, \sinh(\phi) = \phi and \cosh(\phi) = 1
+So accordingly, \mu and \sigma^2 can be approximated as 
+
+\mu =    \frac{2q_e}{T_0}  10^{\lambda \frac{ABL}{20}} \lambda \frac{ILD}{X} 
+ \sigma^2 =   \frac{2q_e^2}{T_0}  10^{\lambda \frac{ABL}{20}}
+
+
+ % ---
+ \subsubsection{Putting mean and variance in the diffusion equation}
+
+ the orginal differential equaton with "x" as decision variable is
+ 
+ dx/dt = \mu + \sigma \eta(t)
+
+\begin{equation}
+    dx = \mu dt + \sigma \eta(t) dt
+    \label{eq:og_diff}
+\end{equation}
+
+ Normalization decision variable with "distance between starting point to bound" \theta
+ z = x/\theta
+
+ dz = dx/\theta
+
+ \begin{equation}
+    dx = \theta dz
+    \label{eq:dxdz}
+\end{equation}
+
+
+
+
+ time is normalized with average time taken when velocity is zero, t_{\theta} = \frac{\theta^2}{\sigma^2}
+
+ \tau = t/t_{\theta}
+
+ d\tau = dt/t_{\theta}
+
+\begin{equation}
+    dt = t_{\theta} d\tau
+    \label{eq:dtdtau}
+\end{equation}
+
+Putting \ref{eq:dxdz} and \ref{eq:dtdtau} in \ref{eq:og_diff}
+
+\begin{equation}
+    \theta dz &= \mu t_{\theta} d\tau + \sigma \eta(t) t_{\theta} d\tau
+           dz  &= \frac{1}{\theta} \mu \frac{\theta^2}{\sigma^2} d\tau + \frac{1}{\theta} \sigma \eta(t) \frac{\theta^2}{\sigma^2} d\tau
+              dz  &= \mu \frac{\theta}{\sigma^2} d\tau + \frac{\theta}{\sigma} \eta(t) d\tau
+              dz  &= \mu \frac{\theta}{\sigma^2} d\tau + \sqrt{t_{\theta}} \eta(t) d\tau
+              
+\end{equation}
+
+rewriting the above equation
+\begin{equation}
+    \frac{dz}{d\tau} = \mu \frac{\theta}{\sigma^2} + \sqrt{t_{\theta}} \eta(t)
+    \label{eq:dz_by_dtau}
+\end{equation}
+
+We already calculated \mu and \sigma^2 in terms of sound levels. So, we can substitute them in above equation
+
+\frac{\mu}{\sigma^2} = \frac{1}{q_e} \tanh(\lambda \frac{ILD}{X})
+
+So, \mu \frac{\theta}{\sigma^2} = \frac{\theta}{q_e} \tanh(\lambda \frac{ILD}{X})
+Let \frac{\theta}{q_e} = \theta_e
+
+and somehow \sqrt{\t_theta} \eta(t) = \eta(\tau)
+So, \ref{eq:dz_by_dtau} can be written as
+
+\begin{equation}
+    \frac{dz}{d\tau} = \theta_e \tanh(\lambda \frac{ILD}{X}) + \eta(\tau)
+    \label{eq:dz_by_dtau_final}
+\end{equation}
+
+
+So, whatever be the ABL, when you normalize time and DV, the mean evidence accumulated depends on ILD only.
+In terms of TIED,  evideence accumulated depends on ILD as per weber's law(fraction of stimuli) and the RT distributions
+are time-scaled versions of each other by a factor of $t_{\theta}$
+
+\begin{equation}
+ t_{\theta} &=  \theta^2/\sigma^2
+            &= \theta^2/(\frac{2q_e^2}{T_0}  10^{\lambda \frac{ABL}{20}} \cosh(\frac{\lambda \cdot ILD}{X}))
+            
+    Putting \theta/q_e = \theta_e
+            &= \frac{(\theta_e^2 \cdot T_0 \cdot 10^{\lambda \frac{ABL}{20}})}{cosh(\frac{\lambda \cdot ILD}{X})} 
+\end{equation}
+
+
+
+

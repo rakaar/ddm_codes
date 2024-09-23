@@ -11,3 +11,4 @@
 # With afferent, motor delays - like in paper
 - `psiam_delay_paper_utils.py` - PDF funcs, simulate data
 - `psiam_delay_paper_fit.ipynb` - Fit RTs
+- `vbmc_delay_paper.ipynb` - VBMC 

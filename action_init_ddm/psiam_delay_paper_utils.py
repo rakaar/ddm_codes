@@ -1,9 +1,8 @@
 import numpy as np
 from scipy import integrate
 from scipy.integrate import quad
-from scipy.special import erf
+from scipy.special import erf, erfcx
 from numba import jit
-
 
 @jit
 def simulate_psiam(V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, dt):
@@ -162,6 +161,122 @@ def rho_E_t_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor):
     return  rho_E_minus_small_t_NORM_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) + rho_E_minus_small_t_NORM_fn(t, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor)
 
 
+def phi(x):
+    """Standard Gaussian function."""
+    return (1 / np.sqrt(2 * np.pi)) * np.exp(-0.5 * x**2)
+
+def M(x):
+    """Mills ratio."""
+    return np.sqrt(np.pi / 2) * erfcx(x / np.sqrt(2))
+
+def CDF_E_minus_small_t_NORM_fn(t, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor):
+    """
+    In normalized time, CDF of hitting the lower bound.
+    """
+    v = V_E * theta_E
+    w = (Z_E + theta_E) / (2 * theta_E)
+    a = 2
+    
+    # t subtraction will be done outside the function
+    if t <= 0:
+        return 0
+    
+    t /= theta_E**2
+    result = np.exp(-v * a * w - (((v**2) * t) / 2))
+
+    summation = 0
+    for k in range(K_max + 1):
+        if k % 2 == 0:  # even k
+            r_k = k * a + a * w
+        else:  # odd k
+            r_k = k * a + a * (1 - w)
+        
+        term1 = phi((r_k) / np.sqrt(t))
+        term2 = M((r_k - v * t) / np.sqrt(t)) + M((r_k + v * t) / np.sqrt(t))
+        
+        summation += ((-1)**k) * term1 * term2
+
+    return (result*summation)
+
+
+def all_RTs_fit_fn(t_pts, V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor):
+    """
+    PDF of all RTs array irrespective of choice
+    """
+    K_max = 10
+
+    P_A = [rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]# if AI hit
+    C_E = [CDF_E_minus_small_t_NORM_fn(t-t_stim, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) \
+           + CDF_E_minus_small_t_NORM_fn(t-t_stim, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) for t in t_pts]
+    P_E_cum = np.zeros(len(t_pts))
+    for i,t in enumerate(t_pts):
+        t1 = t - t_motor - t_stim - t_E_aff
+        t2 = t - t_stim
+        if t1 < 0:
+            t1 = 0
+        P_E_cum[i] = CDF_E_minus_small_t_NORM_fn(t2, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) \
+                    + CDF_E_minus_small_t_NORM_fn(t2, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) \
+                    - CDF_E_minus_small_t_NORM_fn(t1, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) \
+                    - CDF_E_minus_small_t_NORM_fn(t1, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
+
+
+    P_E = [rho_E_t_fn(t-t_E_aff-t_stim-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) for t in t_pts]
+    C_A = [cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]
+
+    P_A = np.array(P_A); C_E = np.array(C_E); P_E = np.array(P_E); C_A = np.array(C_A)
+    P_all = P_A*((1-C_E)+P_E_cum) + P_E*(1-C_A)
+
+    return P_all
+
+def up_RTs_fit_fn(t_pts, V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor):
+    """
+    PDF of up RTs array
+    """
+    K_max = 10
+
+    P_A = [rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]
+    P_EA_btn_1_2 = [P_small_t_btn_x1_x2(1, 2, t-t_stim, V_E, theta_E, Z_E, K_max, t_stim, t_E_aff, t_motor) for t in t_pts]
+    P_E_plus_cum = np.zeros(len(t_pts))
+    for i,t in enumerate(t_pts):
+        t1 = t - t_motor - t_stim - t_E_aff
+        t2 = t - t_stim
+        if t1 < 0:
+            t1 = 0
+        P_E_plus_cum[i] = CDF_E_minus_small_t_NORM_fn(t2, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) - CDF_E_minus_small_t_NORM_fn(t1, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor)
+
+
+    P_E_plus = [rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) for t in t_pts]
+    C_A = [cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]
+
+    P_A = np.array(P_A); P_EA_btn_1_2 = np.array(P_EA_btn_1_2); P_E_plus = np.array(P_E_plus); C_A = np.array(C_A)
+    P_correct_unnorm = (P_A*(P_EA_btn_1_2 + P_E_plus_cum) + P_E_plus*(1-C_A))
+    return P_correct_unnorm
+
+
+def down_RTs_fit_fn(t_pts, V_A, theta_A, V_E, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor):
+    """
+    PDF of down RTs array
+    """
+    K_max = 10
+        
+    P_A = [rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]
+    P_EA_btn_0_1 = [P_small_t_btn_x1_x2(0, 1, t-t_stim, V_E, theta_E, Z_E, K_max, t_stim, t_E_aff, t_motor) for t in t_pts]
+    P_E_minus_cum = np.zeros(len(t_pts))
+    for i,t in enumerate(t_pts):
+        t1 = t - t_motor - t_stim - t_E_aff
+        t2 = t - t_stim
+        if t1 < 0:
+            t1 = 0
+        P_E_minus_cum[i] = CDF_E_minus_small_t_NORM_fn(t2, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) - CDF_E_minus_small_t_NORM_fn(t1, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
+
+
+    P_E_minus = [rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) for t in t_pts]
+    C_A = [cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor) for t in t_pts]
+
+    P_A = np.array(P_A); P_EA_btn_0_1 = np.array(P_EA_btn_0_1); P_E_minus = np.array(P_E_minus); C_A = np.array(C_A)
+    P_wrong_unnorm = (P_A*(P_EA_btn_0_1+P_E_minus_cum) + P_E_minus*(1-C_A))
+    return P_wrong_unnorm
+
 def correct_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_E_aff, t_stim, t_motor):
     """
     log likelihood of correct RT
@@ -172,8 +287,9 @@ def correct_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_
     t2 = t - t_stim
     if t1 < 0:
         t1 = 0
-    P_E_plus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(-V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor))[0]
-
+    # P_E_plus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(-V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor))[0]
+    P_E_plus_cum = CDF_E_minus_small_t_NORM_fn(t2, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor) \
+                 - CDF_E_minus_small_t_NORM_fn(t1, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor)
 
     P_E_plus = rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, -V_E, theta_E, K_max, t_stim, -Z_E, t_E_aff, t_motor)
     C_A = cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
@@ -196,7 +312,9 @@ def wrong_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_E_
     t2 = t - t_stim
     if t1 < 0:
         t1 = 0
-    P_E_minus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
+    # P_E_minus_cum = quad(rho_E_minus_small_t_NORM_fn, t1, t2, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
+    P_E_minus_cum = CDF_E_minus_small_t_NORM_fn(t2, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor) \
+                  - CDF_E_minus_small_t_NORM_fn(t1, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
 
 
     P_E_minus = rho_E_minus_small_t_NORM_fn(t-t_stim-t_E_aff-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
@@ -216,18 +334,7 @@ def abort_RT_loglike_fn(t, V_A, theta_A, V_E, theta_E, Z_E, K_max, t_A_aff, t_E_
     log likelihood of abort RT
     """
     P_A = rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
-    C_E = quad(rho_E_t_fn, 0, t-t_stim, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
-    t1 = t - t_motor - t_stim - t_E_aff
-    t2 = t - t_stim
-    if t1 < 0:
-        t1 = 0
-    P_E_cum = quad(rho_E_t_fn, t1, t2, args=(V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor))[0]
-
-
-    P_E = rho_E_t_fn(t-t_E_aff-t_stim-t_motor, V_E, theta_E, K_max, t_stim, Z_E, t_E_aff, t_motor)
-    C_A = cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A, t_A_aff, t_motor)
-
-    P_abort = P_A*((1-C_E)+P_E_cum) + P_E*(1-C_A)
+    P_abort = P_A
     if P_abort <= 0:
         P_abort = 1e-16
 
