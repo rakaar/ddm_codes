@@ -2,8 +2,10 @@ import numpy as np
 from numba import jit
 import random
 
-def tied_data_gen_wrapper(ILD, ABL_arr, rate_lambda, theta_E, T_0, t_non_decision, dt):
+def tied_data_gen_wrapper(ILD_arr, ABL_arr, rate_lambda, theta_E, T_0, t_non_decision, dt):
     ABL = random.choice(ABL_arr)
+    ILD = random.choice(ILD_arr)
+    
     choice, rt = simulated_tied_ddm_norm(ILD, ABL, rate_lambda, theta_E, T_0, t_non_decision, dt)
     return {'choice': choice, 'rt': rt, 'ABL': ABL, 'ILD': ILD}
 

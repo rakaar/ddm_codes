@@ -215,4 +215,24 @@ are time-scaled versions of each other by a factor of $t_{\theta}$
 
 
 
+% simplify \sqrt{t_\theta} \eta(t) = \eta(\tau)
+Simplifying \sqrt(t_\theta) \eta(t) as \eta(\tau)
 
+we know
+
+dB_t = \sqrt{dt}, dB_\tau = \sqrt{d\tau}
+
+and
+
+\eta(t) = \frac{dB_t}{dt} and \eta(\tau) = \frac{dB_\tau}{d\tau}
+
+
+
+Simplifying \sqrt{t_\theta} \eta(t) &= \sqrt{t_\theta} \frac{dB_t}{dt} 
+                                    &= \sqrt{t_\theta} \frac{\sqrt{dt}}{dt}
+                                    &= \sqrt{t_\theta} \frac{1}{\sqrt{dt}}
+                                    &= \frac{1}{\frac{dt}{t_\theta}}
+                                    &= \frac{1}{\sqrt{d\tau}}
+                                    &= \frac{\sqrt{d\tau}}{d\tau}
+                                    &= \frac{dB_\tau}{d\tau}
+                                    & = \eta(\tau)
