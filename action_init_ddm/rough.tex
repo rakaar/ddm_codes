@@ -236,3 +236,37 @@ Simplifying \sqrt{t_\theta} \eta(t) &= \sqrt{t_\theta} \frac{dB_t}{dt}
                                     &= \frac{\sqrt{d\tau}}{d\tau}
                                     &= \frac{dB_\tau}{d\tau}
                                     & = \eta(\tau)
+
+% ---- 
+
+\subsubsection{Priors}
+rate_lambda_bounds = [0.01, 0.15]
+theta_E_bounds = [20, 60]
+T_0_bounds = [0.1*(1e-3), 1.2*(1e-3)]
+t_non_decision_bounds = [60*(1e-3), 90*(1e-3)]
+
+rate_lambda_plausible_bounds = [0.05, 0.1]
+theta_E_plausible_bounds = [40, 55]
+T_0_plausible_bounds = [0.15*(1e-3), 0.8*(1e-3)]
+t_non_decision_plausible_bounds = [65*(1e-3), 85*(1e-3)]
+
+# True params
+# rate_lambda = 0.076
+# theta_E = 50.7
+# T_0 = 0.19*(1e-3)
+# t_non_decision = 78*(1e-3)
+
+The above bounds were used for VBMC fittings. Prior distribution used was trapezoidal distribution with above bounds.
+Number of trails was 20K.
+
+Note: There is decreased correlation between (theta and lambda), and (theta and T_0). 
+This could be because these pairs come(\lambda \cdot \theta_e) as product in equations at psychometric threshold.
+
+
+
+\subsubsection{Corner plots}
+
+% TODO: display the /images/psiam/tied_VBMC_corner.png
+
+\subsection{tachometric curves}
+% TODO: display the /images/psiam/tied_VBMC_tacho.png
