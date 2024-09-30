@@ -187,6 +187,43 @@ def CDF_E_minus_small_t_NORM_fn(t, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bou
     return (result*summation)
 
 
+def P_small_t_btn_x1_x2(x1, x2, t, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, K_max):
+    """
+    Integration of P_small(x,t) btn x1 and x2
+    """
+    if t <= 0:
+        return 0
+    
+    q_e = 1
+    theta = theta_E*q_e
+
+    chi = 17.37
+    mu = theta_E * np.tanh(rate_lambda * ILD / chi)
+    z = (Z_E/theta) + 1.0
+
+    
+    t_theta = T_0 * (theta_E**2) * (10**(-rate_lambda*ABL/20)) * (1/(2*np.cosh(rate_lambda*ILD/chi)))
+    t /= t_theta
+
+    result = 0
+    
+    sqrt_t = np.sqrt(t)
+    
+    for n in range(-K_max, K_max + 1):
+        term1 = np.exp(4 * mu * n) * (
+            Phi((x2 - (z + 4 * n + mu * t)) / sqrt_t) -
+            Phi((x1 - (z + 4 * n + mu * t)) / sqrt_t)
+        )
+        
+        term2 = np.exp(2 * mu * (2 * (1 - n) - z)) * (
+            Phi((x2 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t) -
+            Phi((x1 - (-z + 4 * (1 - n) + mu * t)) / sqrt_t)
+        )
+        
+        result += term1 - term2
+    
+    return result
+
 # PDF for RTs
 def all_RTs_fit_fn(t_pts, V_A, theta_A, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, K_max):
     """
@@ -218,3 +255,57 @@ def all_RTs_fit_fn(t_pts, V_A, theta_A, ABL, ILD, rate_lambda, T_0, theta_E, Z_E
     P_all = P_A*((1-C_E)+P_E_cum) + P_E*(1-C_A)
 
     return P_all
+
+
+
+def up_RTs_fit_fn(t_pts, V_A, theta_A, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, K_max):
+    """
+    PDF of up RTs array
+    """
+    bound = 1
+
+    P_A = [rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A) for t in t_pts]
+    P_EA_btn_1_2 = [P_small_t_btn_x1_x2(1, 2, t-t_stim, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, K_max) for t in t_pts]
+    P_E_plus_cum = np.zeros(len(t_pts))
+    for i,t in enumerate(t_pts):
+        t1 = t - t_motor - t_stim - t_E_aff
+        t2 = t - t_stim
+        if t1 < 0:
+            t1 = 0
+        P_E_plus_cum[i] = CDF_E_minus_small_t_NORM_fn(t2, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max) \
+                    - CDF_E_minus_small_t_NORM_fn(t1, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max)
+
+
+    P_E_plus = [rho_E_minus_small_t_NORM_fn(t-t_E_aff-t_stim-t_motor, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max) for t in t_pts]
+    C_A = [cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A) for t in t_pts]
+
+    P_A = np.array(P_A); P_EA_btn_1_2 = np.array(P_EA_btn_1_2); P_E_plus = np.array(P_E_plus); C_A = np.array(C_A)
+    P_correct_unnorm = (P_A*(P_EA_btn_1_2 + P_E_plus_cum) + P_E_plus*(1-C_A))
+    return P_correct_unnorm
+
+
+
+def down_RTs_fit_fn(t_pts, V_A, theta_A, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, t_stim, t_A_aff, t_E_aff, t_motor, K_max):
+    """
+    PDF of down RTs array
+    """
+    bound = -1
+        
+    P_A = [rho_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A) for t in t_pts]
+    P_EA_btn_0_1 = [P_small_t_btn_x1_x2(0, 1, t-t_stim, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, K_max) for t in t_pts]
+    P_E_minus_cum = np.zeros(len(t_pts))
+    for i,t in enumerate(t_pts):
+        t1 = t - t_motor - t_stim - t_E_aff
+        t2 = t - t_stim
+        if t1 < 0:
+            t1 = 0
+        P_E_minus_cum[i] = CDF_E_minus_small_t_NORM_fn(t2, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max) \
+                    - CDF_E_minus_small_t_NORM_fn(t1, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max)
+
+
+    P_E_minus = [rho_E_minus_small_t_NORM_fn(t-t_E_aff-t_stim-t_motor, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, bound, K_max) for t in t_pts]
+    C_A = [cum_A_t_fn(t-t_A_aff-t_motor, V_A, theta_A) for t in t_pts]
+
+    P_A = np.array(P_A); P_EA_btn_0_1 = np.array(P_EA_btn_0_1); P_E_minus = np.array(P_E_minus); C_A = np.array(C_A)
+    P_wrong_unnorm = (P_A*(P_EA_btn_0_1+P_E_minus_cum) + P_E_minus*(1-C_A))
+    return P_wrong_unnorm
