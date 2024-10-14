@@ -41,17 +41,17 @@ def simulate_psiam_tied(V_A, theta_A, ABL, ILD, rate_lambda, T_0, theta_E, Z_E, 
         if AI >= theta_A:
             is_act = 1
             AI_hit_time = t*dt
-            if t*dt > t_stim:
-                while t*dt <= (AI_hit_time + t_E_aff + t_motor):#  u can process evidence till stim plays
-                    if t*dt > t_stim + t_E_aff: # Evid accum wil begin only after stim starts and afferent delay
-                        DV += mu*dt + sigma*np.random.normal(0, dB)
-                        if DV >= theta:
-                            DV = theta
-                            break
-                        elif DV <= -theta:
-                            DV = -theta
-                            break
-                    t += 1
+            # if t*dt > t_stim - t_motor:
+            while t*dt <= (AI_hit_time + t_E_aff + t_motor):#  u can process evidence till stim plays
+                if t*dt > t_stim + t_E_aff: # Evid accum wil begin only after stim starts and afferent delay
+                    DV += mu*dt + sigma*np.random.normal(0, dB)
+                    if DV >= theta:
+                        DV = theta
+                        break
+                    elif DV <= -theta:
+                        DV = -theta
+                        break
+                t += 1
             
             break
         
